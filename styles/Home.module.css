@@ -30,3 +30,9 @@
   justify-content: center;
   padding-bottom: 4rem;
 }
+
+@media (max-width: 600px) {
+  .main {
+    padding: 2rem;
+  }
+}

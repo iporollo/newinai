@@ -179,7 +179,6 @@ const LinksList = ({ linkData }) => {
         className="link-list"
         style={{
           listStyle: 'none',
-          padding: 0,
           margin: 0,
           textAlign: 'center',
           maxWidth: 570,
