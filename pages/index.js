@@ -51,7 +51,7 @@ export const getServerSideProps = async ({ query }) => {
   let linkData = null;
   // const page = query.page || 1;
   const offset = query.offset || null;
-  const pageSize = 100;
+  const pageSize = 10;
   const resultingLinks = [];
 
   try {
