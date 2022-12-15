@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import fetch from 'node-fetch';
 import { TwitterTweetEmbed } from 'react-twitter-embed';
+import { getLinkPreview } from 'link-preview-js';
 import styles from '../styles/Home.module.css';
 
 // TODO: rework component to use link-preview-js instead of grabith
@@ -45,9 +46,6 @@ export default function Home({ linkData }) {
 }
 
 export const getServerSideProps = async ({ query }) => {
-  const fs = require('fs');
-  const grabity = require('grabity');
-
   let linkData = null;
   // const page = query.page || 1;
   const offset = query.offset || null;
@@ -74,13 +72,23 @@ export const getServerSideProps = async ({ query }) => {
 
     const records = airtableResult.records;
     for (let i = 0; i < records.length; i++) {
-      const l = await grabity.grabIt(records[i].fields['Link']);
+      const l = await getLinkPreview(records[i].fields['Link']);
+      console.log(l);
       // l = {
-      //   title
-      //   description
-      //   image
-      //   favicon
+      //   title: string
+      //   description: string
+      //   image: string
+      //   favicons: []
       // }
+      Object.keys(l).forEach((key) => {
+        if (!l[key]) {
+          l[key] = null;
+        }
+        if (l.images && l.images.length > 0) {
+          l.image = l.images[0];
+        }
+      });
+
       const result = {
         ...l,
         link: records[i].fields['Link'],

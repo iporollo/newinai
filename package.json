@@ -12,9 +12,10 @@
     "airtable": "^0.11.6",
     "eslint": "8.29.0",
     "eslint-config-next": "13.0.6",
-    "grabity": "^1.0.5",
+    "link-preview-js": "^3.0.4",
     "next": "13.0.6",
     "node-fetch": "2.6.1",
+    "parse5": "^7.1.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-twitter-embed": "^4.0.4"
