@@ -1,89 +1,32 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import fetch from 'node-fetch';
 import { TwitterTweetEmbed } from 'react-twitter-embed';
-import { getLinkPreview } from 'link-preview-js';
 import styles from '../styles/Home.module.css';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import { default as nodeFetch } from 'node-fetch';
 
-const PAGE_SIZE = 5;
+// props
+// links: array of links
+// offset: string
 
-const fetchAirtableData = async (offset) => {
-  const resultingLinks = [];
-  try {
+export default function Home(props) {
+  const [linkList, setLinkList] = useState(props.links);
+  const [offset, setOffset] = useState(props.offset);
+
+  const fetchAirtableData = async () => {
     const res = await fetch(
-      `https://api.airtable.com/v0/${
-        process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID
-      }/Link%20Aggregator?pageSize=${PAGE_SIZE}&view=Link%20Aggregation%20List${
-        offset ? `&offset=${offset}` : ''
-      }`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_AIRTABLE_API_KEY}`,
-        },
-      }
+      `/api/fetchLinks${offset ? `?offset=${offset}` : ''}`
     );
-    if (res.status !== 200) {
-      throw new Error('Failed to fetch');
+    const data = await res.json();
+    if (data.links) {
+      setLinkList([...linkList, ...data.links]);
     }
-    const airtableResult = await res.json();
-
-    const records = airtableResult.records;
-    for (let i = 0; i < records.length; i++) {
-      try {
-        const l = await getLinkPreview(records[i].fields['Link']);
-        // l = {
-        //   title: string
-        //   description: string
-        //   image: string
-        //   favicons: []
-        // }
-        // transform data
-        Object.keys(l).forEach((key) => {
-          if (!l[key]) {
-            l[key] = null;
-          }
-          if (l.images && l.images.length > 0) {
-            l.image = l.images[0];
-          }
-        });
-
-        const result = {
-          ...l,
-          link: records[i].fields['Link'],
-          date: records[i].fields['created_at'],
-        };
-        resultingLinks.push(result);
-      } catch {
-        // do nothing
-      }
+    if (data.offset) {
+      setOffset(data.offset);
     }
-    return {
-      links: resultingLinks,
-      offset: airtableResult?.offset ? airtableResult.offset : null,
-    };
-  } catch (err) {
-    console.log(err);
-    return { error: { message: err.message } };
-  }
-};
+  };
 
-export default function Home({ linkData }) {
-  const [links, setLinks] = useState([]);
-
-  // Set up user data
-  useEffect(() => {
-    if (linkData) {
-      // Error check
-      if (linkData.error) {
-        // Handle error
-      } else {
-        setLinks(linkData.links);
-      }
-    }
-  }, [linkData]);
-
-  if (linkData.error) {
+  if (props.links.error) {
     return <div>{`Error: Couldn't load links`}</div>;
   }
 
@@ -114,15 +57,13 @@ export default function Home({ linkData }) {
           }}
         >
           <InfiniteScroll
-            dataLength={links.length}
-            next={(offset = linkData.offset || null) => {
-              return fetchAirtableData(offset);
-            }}
+            dataLength={linkList?.length}
+            next={() => fetchAirtableData()}
             hasMore={true}
             loader={<h4>Loading...</h4>}
           >
-            {links.length > 0 &&
-              links.map((link, i) => {
+            {linkList?.length > 0 &&
+              linkList.map((link, i) => {
                 if (link.link.includes('twitter.com')) {
                   return (
                     <div style={{ margin: 10 }} key={i}>
@@ -169,8 +110,18 @@ export default function Home({ linkData }) {
 }
 
 export const getServerSideProps = async () => {
-  const linkData = await fetchAirtableData();
+  const fetchInitialAirtableData = async (offset) => {
+    const res = await nodeFetch(
+      `${process.env.NEXT_URL}/api/fetchLinks${
+        offset ? `&offset=${offset}` : ''
+      }`
+    );
+    const data = await res.json();
+    return data;
+  };
+
+  const { links, offset } = await fetchInitialAirtableData();
   return {
-    props: { linkData },
+    props: { links, offset },
   };
 };
