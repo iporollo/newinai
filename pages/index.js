@@ -21,9 +21,7 @@ export default function Home(props) {
     if (data.links) {
       setLinkList([...linkList, ...data.links]);
     }
-    if (data.offset) {
-      setOffset(data.offset);
-    }
+    setOffset(data.offset);
   };
 
   if (props.links.error) {
@@ -59,7 +57,7 @@ export default function Home(props) {
           <InfiniteScroll
             dataLength={linkList?.length}
             next={() => fetchAirtableData()}
-            hasMore={true}
+            hasMore={offset ? true : false}
             loader={<h4>Loading...</h4>}
           >
             {linkList?.length > 0 &&
