@@ -58,7 +58,7 @@ export default function Home(props) {
             dataLength={linkList?.length}
             next={() => fetchAirtableData()}
             hasMore={offset ? true : false}
-            loader={<h4>Loading...</h4>}
+            loader={<h4>Loading more links...</h4>}
           >
             {linkList?.length > 0 &&
               linkList.map((link, i) => {
@@ -67,7 +67,11 @@ export default function Home(props) {
                     <div style={{ margin: 10 }} key={i}>
                       <TwitterTweetEmbed
                         tweetId={link.link.split('/').pop().split('?')[0]}
-                        placeholder={<h1>Loading ...</h1>}
+                        placeholder={
+                          <div className="loader-container">
+                            <div className="loader"></div>
+                          </div>
+                        }
                       />
                     </div>
                   );
