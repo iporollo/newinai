@@ -3,15 +3,16 @@ import Head from 'next/head';
 import { TwitterTweetEmbed } from 'react-twitter-embed';
 import styles from '../styles/Home.module.css';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { default as nodeFetch } from 'node-fetch';
-
-// props
-// links: array of links
-// offset: string
 
 export default function Home(props) {
-  const [linkList, setLinkList] = useState(props.links);
-  const [offset, setOffset] = useState(props.offset);
+  const [linkList, setLinkList] = useState([]);
+  const [isError, setIsError] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [offset, setOffset] = useState(null);
+
+  useEffect(() => {
+    fetchAirtableData();
+  }, []);
 
   const fetchAirtableData = async () => {
     const res = await fetch(
@@ -19,12 +20,20 @@ export default function Home(props) {
     );
     const data = await res.json();
     if (data.links) {
-      setLinkList([...linkList, ...data.links]);
+      if (data.links.error) {
+        setIsError(true);
+      } else {
+        setLinkList([...linkList, ...data.links]);
+      }
     }
     setOffset(data.offset);
+    console.log(isInitialLoad);
+    if (isInitialLoad) {
+      setIsInitialLoad(false);
+    }
   };
 
-  if (props.links.error) {
+  if (isError) {
     return <div>{`Error: Couldn't load links`}</div>;
   }
 
@@ -43,58 +52,72 @@ export default function Home(props) {
         </a>
       </div>
 
-      <main className={styles.main}>
-        <ul
-          className="link-list"
+      {isInitialLoad ? (
+        <div
+          className="loader-container"
           style={{
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-            textAlign: 'center',
-            maxWidth: 570,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: 40,
           }}
         >
-          <InfiniteScroll
-            dataLength={linkList?.length}
-            next={() => fetchAirtableData()}
-            hasMore={offset ? true : false}
-            loader={<h4>Loading more links...</h4>}
+          <div className="loader"></div>
+        </div>
+      ) : (
+        <main className={styles.main}>
+          <ul
+            className="link-list"
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              textAlign: 'center',
+              maxWidth: 570,
+            }}
           >
-            {linkList?.length > 0 &&
-              linkList.map((link, i) => {
-                if (link.link.includes('twitter.com')) {
-                  return (
-                    <div style={{ margin: 10 }} key={i}>
-                      <TwitterTweetEmbed
-                        tweetId={link.link.split('/').pop().split('?')[0]}
-                        placeholder={
-                          <div className="loader-container">
-                            <div className="loader"></div>
-                          </div>
-                        }
-                      />
-                    </div>
-                  );
-                }
-                return (
-                  <li className="link" key={i}>
-                    <a href={link.link} target="_blank" rel="noreferrer">
-                      <div className="card">
-                        {link.image && (
-                          <img src={link.image} alt={link.description} />
-                        )}
-                        <div>
-                          <h2>{link.title}</h2>
-                          <p>{link.description}</p>
-                        </div>
+            <InfiniteScroll
+              dataLength={linkList?.length}
+              next={() => fetchAirtableData()}
+              hasMore={offset ? true : false}
+              loader={<h4>Loading more links...</h4>}
+            >
+              {linkList?.length > 0 &&
+                linkList.map((link, i) => {
+                  if (link.link.includes('twitter.com')) {
+                    return (
+                      <div style={{ margin: 10 }} key={i}>
+                        <TwitterTweetEmbed
+                          tweetId={link.link.split('/').pop().split('?')[0]}
+                          placeholder={
+                            <div className="loader-container">
+                              <div className="loader"></div>
+                            </div>
+                          }
+                        />
                       </div>
-                    </a>
-                  </li>
-                );
-              })}
-          </InfiniteScroll>
-        </ul>
-      </main>
+                    );
+                  }
+                  return (
+                    <li className="link" key={i}>
+                      <a href={link.link} target="_blank" rel="noreferrer">
+                        <div className="card">
+                          {link.image && (
+                            <img src={link.image} alt={link.description} />
+                          )}
+                          <div>
+                            <h2>{link.title}</h2>
+                            <p>{link.description}</p>
+                          </div>
+                        </div>
+                      </a>
+                    </li>
+                  );
+                })}
+            </InfiniteScroll>
+          </ul>
+        </main>
+      )}
 
       <footer className={styles.footer}>
         Built with ❤️ by
@@ -110,20 +133,3 @@ export default function Home(props) {
     </div>
   );
 }
-
-export const getServerSideProps = async () => {
-  const fetchInitialAirtableData = async (offset) => {
-    const res = await nodeFetch(
-      `${process.env.NEXT_URL}/api/fetchLinks${
-        offset ? `&offset=${offset}` : ''
-      }`
-    );
-    const data = await res.json();
-    return data;
-  };
-
-  const { links, offset } = await fetchInitialAirtableData();
-  return {
-    props: { links, offset },
-  };
-};
