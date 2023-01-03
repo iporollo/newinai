@@ -1,14 +1,30 @@
 import { useState, useEffect } from 'react';
+import Modal from 'react-modal';
 import Head from 'next/head';
 import { TwitterTweetEmbed } from 'react-twitter-embed';
-import styles from '../styles/Home.module.css';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import styles from '../styles/Home.module.css';
+
+const customStyles = {
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+    transform: 'translate(-50%, -50%)',
+  },
+};
+
+Modal.setAppElement('#__next');
 
 export default function Home(props) {
   const [linkList, setLinkList] = useState([]);
   const [isError, setIsError] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [offset, setOffset] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [inputLink, setInputLink] = useState('');
 
   useEffect(() => {
     fetchAirtableData();
@@ -27,9 +43,29 @@ export default function Home(props) {
       }
     }
     setOffset(data.offset);
-    console.log(isInitialLoad);
+
     if (isInitialLoad) {
       setIsInitialLoad(false);
+    }
+  };
+
+  function openModal() {
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+  }
+
+  const submitLink = async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/submitLink', {
+      method: 'POST',
+      body: JSON.stringify({ link: inputLink }),
+    });
+    if (res.ok) {
+      setInputLink('');
+      closeModal();
     }
   };
 
@@ -45,11 +81,34 @@ export default function Home(props) {
 
       <div className={styles.header}>
         <h2>{"What's New In AI"}</h2>
-        <a href="https://newinai.substack.com/">
-          <p style={{ textDecoration: 'underline', color: 'blue' }}>
-            Newsletter
-          </p>
-        </a>
+        <div style={{ display: 'flex' }}>
+          <a href="https://newinai.substack.com/">
+            <p
+              style={{
+                textDecoration: 'underline',
+                color: 'blue',
+                marginRight: 24,
+              }}
+            >
+              Newsletter
+            </p>
+          </a>
+
+          <button
+            onClick={openModal}
+            style={{
+              padding: 10,
+              width: '100%',
+              borderRadius: 5,
+              border: 'none',
+              background: '#000',
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            Submit Link
+          </button>
+        </div>
       </div>
 
       {isInitialLoad ? (
@@ -118,6 +177,78 @@ export default function Home(props) {
           </ul>
         </main>
       )}
+
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        style={customStyles}
+        contentLabel="Input Link Modal"
+        preventScroll
+      >
+        <h2>Submit Link</h2>
+        <p>
+          Submit a link for this page. We'll review the submission and add it to
+          the list accordingly.
+        </p>
+
+        <button
+          onClick={closeModal}
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            border: 'none',
+            background: 'none',
+            padding: 6,
+            cursor: 'pointer',
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="#000"
+            viewBox="0 0 24 24"
+            strokeWidth="1.5"
+            stroke="#000"
+            className="w-6 h-6"
+            width={24}
+            height={24}
+          >
+            <path d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <form onSubmit={submitLink}>
+          <input
+            type="url"
+            style={{
+              padding: 10,
+              width: '100%',
+              marginBottom: 10,
+              borderRadius: 5,
+              border: '1px solid #ccc',
+            }}
+            placeholder="https://example.com"
+            id="link"
+            name="link"
+            value={inputLink}
+            onChange={(e) => setInputLink(e.target.value)}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: 10,
+              width: '100%',
+              borderRadius: 5,
+              border: 'none',
+              background: '#000',
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            Submit
+          </button>
+        </form>
+      </Modal>
 
       <footer className={styles.footer}>
         Built with ❤️ by
