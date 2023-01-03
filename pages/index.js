@@ -187,8 +187,8 @@ export default function Home(props) {
       >
         <h2>Submit Link</h2>
         <p>
-          Submit a link for this page. We'll review the submission and add it to
-          the list accordingly.
+          {`Submit a link for this page. We'll review the submission and add it to
+          the list accordingly.`}
         </p>
 
         <button
