@@ -94,6 +94,18 @@ export default function Home(props) {
             </p>
           </a>
 
+          <a href="https://discord.gg/ujsecxAw">
+            <p
+              style={{
+                textDecoration: 'underline',
+                color: 'blue',
+                marginRight: 24,
+              }}
+            >
+              Discord
+            </p>
+          </a>
+
           <button
             onClick={openModal}
             style={{
