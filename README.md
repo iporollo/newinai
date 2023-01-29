@@ -1,3 +1,3 @@
-https://newinai.com
+https://app.newinai.com
 
 Link aggregation feed
